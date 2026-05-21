@@ -9,7 +9,16 @@ import urllib.request
 
 from .rule_engine import AGENT_STEPS, simplify_with_rules
 
-OPENAI_RESPONSES_URL = "https://api.openai.com/v1/responses"
+try:
+    from dotenv import load_dotenv
+except ImportError:  # pragma: no cover - optional dependency for local dev
+    load_dotenv = None
+
+if load_dotenv:
+    load_dotenv()
+
+OPENAI_BASE_URL = "https://api.openai.com/v1"
+GPTSAPI_BASE_URL = "https://api.gptsapi.net/v1"
 DEFAULT_MODEL = "gpt-4o-mini"
 
 SYSTEM_PROMPT = """You are CLARA Note, a safety-aware clinical language agent.
@@ -81,11 +90,11 @@ RESPONSE_SCHEMA = {
 
 def simplify_note(note: str, audience: str = "patient", use_llm: bool = True) -> dict:
     fallback = simplify_with_rules(note, audience)
-    if not use_llm or not os.getenv("OPENAI_API_KEY"):
+    if not use_llm or not get_api_key():
         return fallback
 
     try:
-        llm_response = call_openai(note, audience)
+        llm_response, source = call_llm(note, audience)
     except (OSError, urllib.error.URLError, json.JSONDecodeError, KeyError, ValueError):
         fallback["source"] = "local_rules_after_llm_error"
         return fallback
@@ -97,12 +106,45 @@ def simplify_note(note: str, audience: str = "patient", use_llm: bool = True) ->
     )
     merged["agent_steps"] = llm_response.get("agent_steps") or AGENT_STEPS
     merged["mode"] = audience
-    merged["source"] = "openai_structured"
+    merged["source"] = source
     return merged
 
 
-def call_openai(note: str, audience: str) -> dict:
-    model = os.getenv("OPENAI_MODEL", DEFAULT_MODEL)
+def get_api_key() -> str:
+    return (
+        os.getenv("CLARA_LLM_API_KEY")
+        or os.getenv("GPTSAPI_KEY")
+        or os.getenv("OPENAI_API_KEY")
+        or ""
+    )
+
+
+def get_provider() -> str:
+    return os.getenv("CLARA_LLM_PROVIDER", "openai_responses").lower()
+
+
+def get_base_url() -> str:
+    configured = os.getenv("CLARA_LLM_BASE_URL")
+    if configured:
+        return configured.rstrip("/")
+    if get_provider() == "gptsapi":
+        return GPTSAPI_BASE_URL
+    return OPENAI_BASE_URL
+
+
+def get_model() -> str:
+    return os.getenv("CLARA_LLM_MODEL") or os.getenv("OPENAI_MODEL") or DEFAULT_MODEL
+
+
+def call_llm(note: str, audience: str) -> tuple[dict, str]:
+    provider = get_provider()
+    if provider in {"gptsapi", "openai_chat", "chat_completions"}:
+        return call_chat_completions(note, audience), f"{provider}_structured"
+    return call_openai_responses(note, audience), "openai_responses_structured"
+
+
+def call_openai_responses(note: str, audience: str) -> dict:
+    model = get_model()
     payload = {
         "model": model,
         "input": [
@@ -127,10 +169,10 @@ def call_openai(note: str, audience: str) -> dict:
         "max_output_tokens": 900,
     }
     request = urllib.request.Request(
-        OPENAI_RESPONSES_URL,
+        f"{get_base_url()}/responses",
         data=json.dumps(payload).encode("utf-8"),
         headers={
-            "Authorization": f"Bearer {os.environ['OPENAI_API_KEY']}",
+            "Authorization": f"Bearer {get_api_key()}",
             "Content-Type": "application/json",
         },
         method="POST",
@@ -140,6 +182,51 @@ def call_openai(note: str, audience: str) -> dict:
         body = json.loads(response.read().decode("utf-8"))
 
     output_text = extract_output_text(body)
+    parsed = json.loads(output_text)
+    validate_response_shape(parsed)
+    return parsed
+
+
+def call_chat_completions(note: str, audience: str) -> dict:
+    model = get_model()
+    payload = {
+        "model": model,
+        "messages": [
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {
+                "role": "user",
+                "content": (
+                    f"Audience mode: {audience}\n\n"
+                    "Simplify this simulated clinical note while preserving uncertainty. "
+                    "Return JSON only:\n"
+                    f"{note}"
+                ),
+            },
+        ],
+        "response_format": {
+            "type": "json_schema",
+            "json_schema": {
+                "name": "clara_note_response",
+                "strict": True,
+                "schema": RESPONSE_SCHEMA,
+            },
+        },
+        "max_tokens": 900,
+    }
+    request = urllib.request.Request(
+        f"{get_base_url()}/chat/completions",
+        data=json.dumps(payload).encode("utf-8"),
+        headers={
+            "Authorization": f"Bearer {get_api_key()}",
+            "Content-Type": "application/json",
+        },
+        method="POST",
+    )
+
+    with urllib.request.urlopen(request, timeout=30) as response:
+        body = json.loads(response.read().decode("utf-8"))
+
+    output_text = body["choices"][0]["message"]["content"]
     parsed = json.loads(output_text)
     validate_response_shape(parsed)
     return parsed

@@ -15,7 +15,7 @@ It is designed as a responsible medical AI portfolio project. It does not diagno
 - Generates questions to ask a clinician
 - Supports patient, caregiver, and student explanation modes
 - Uses a local deterministic fallback when no backend or API key is available
-- Optionally calls the OpenAI Responses API with structured JSON output
+- Optionally calls the OpenAI Responses API or an OpenAI-compatible provider with structured JSON output
 
 ## Project Structure
 
@@ -76,7 +76,7 @@ http://localhost:8001/api/simplify
 
 If the backend is unavailable, it falls back to local rules.
 
-## Optional OpenAI Setup
+## Optional LLM Setup
 
 Create a `.env` file or export variables in your shell:
 
@@ -85,7 +85,26 @@ export OPENAI_API_KEY="your_api_key"
 export OPENAI_MODEL="gpt-4o-mini"
 ```
 
-The backend uses the OpenAI Responses API with structured JSON output. If `OPENAI_API_KEY` is missing or the API call fails, CLARA Note returns a deterministic local fallback.
+The backend loads `.env` automatically when `python-dotenv` is installed. If no API key is configured, or if the API call fails, CLARA Note returns a deterministic local fallback.
+
+### GPTsAPI Setup
+
+GPTsAPI is OpenAI-compatible, so CLARA Note can call it through the Chat Completions endpoint. Create a `.env` file:
+
+```bash
+CLARA_LLM_PROVIDER=gptsapi
+CLARA_LLM_BASE_URL=https://api.gptsapi.net/v1
+CLARA_LLM_API_KEY="your_gptsapi_key"
+CLARA_LLM_MODEL="gpt-4o-mini"
+```
+
+Then restart the backend:
+
+```bash
+uvicorn clara_agent.api:app --reload --port 8001
+```
+
+You can also export the variables directly in your shell instead of using `.env`.
 
 ## API
 
