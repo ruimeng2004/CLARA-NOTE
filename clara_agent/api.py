@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from enum import Enum
 
 from fastapi import FastAPI
@@ -43,6 +44,12 @@ class SimplifyResponse(BaseModel):
     mode: Audience
     source: str
 
+def get_cors_origins() -> list[str]:
+    configured = os.getenv("CLARA_CORS_ORIGINS")
+    if configured:
+        return [origin.strip() for origin in configured.split(",") if origin.strip()]
+    return ["http://localhost:8000", "http://127.0.0.1:8000", "null"]
+
 
 app = FastAPI(
     title="CLARA Note API",
@@ -52,7 +59,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:8000", "http://127.0.0.1:8000", "null"],
+    allow_origins=get_cors_origins(),
     allow_credentials=False,
     allow_methods=["GET", "POST"],
     allow_headers=["*"],

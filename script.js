@@ -1,3 +1,5 @@
+const API_BASE_URL = (window.CLARA_API_BASE_URL || "http://localhost:8001").replace(/\/$/, "");
+
 const sampleNotes = {
   cardiology:
     "Assessment: 54-year-old female with hypertension and type 2 diabetes presents with intermittent chest discomfort and shortness of breath. ECG shows nonspecific ST-T changes. Troponin is mildly elevated. CTA chest negative for pulmonary embolism. Plan: admit for telemetry, trend troponins, start aspirin, continue home metformin unless renal function worsens, cardiology consult.",
@@ -475,7 +477,7 @@ function sourceLabel(source) {
 }
 
 async function simplifyWithBackend(note, audience) {
-  const response = await fetch("http://localhost:8001/api/simplify", {
+  const response = await fetch(`${API_BASE_URL}/api/simplify`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ note, audience, use_llm: true })
@@ -525,7 +527,7 @@ async function simplifyNote() {
 
 async function checkBackendHealth() {
   try {
-    const response = await fetch("http://localhost:8001/api/health");
+    const response = await fetch(`${API_BASE_URL}/api/health`);
     if (!response.ok) {
       throw new Error("Health check failed");
     }

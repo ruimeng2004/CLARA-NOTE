@@ -146,6 +146,25 @@ uvicorn clara_agent.api:app --reload --port 8001
 
 You can also export the variables directly in your shell instead of using `.env`.
 
+
+## Deployment Configuration
+
+The frontend API URL is configurable at runtime. In `index.html`, set `window.CLARA_API_BASE_URL` before loading `script.js`:
+
+```html
+<script>
+  window.CLARA_API_BASE_URL = "https://your-backend.example.com";
+</script>
+```
+
+The backend CORS allowlist is configured with a comma-separated environment variable:
+
+```bash
+export CLARA_CORS_ORIGINS="https://your-frontend.example.com,http://localhost:8000"
+```
+
+For deployment, keep `CLARA_LLM_API_KEY` only on the backend host. Never expose it in frontend code.
+
 ## API
 
 ```http
@@ -211,3 +230,7 @@ node --check script.js
 ## Portfolio Description
 
 > CLARA Note is a safety-aware clinical language agent that translates simulated medical notes into readable explanations, flags uncertainty and possible privacy risks, and helps users prepare better clinician questions without providing diagnosis or treatment advice.
+
+## License
+
+MIT License. See [LICENSE](LICENSE).
