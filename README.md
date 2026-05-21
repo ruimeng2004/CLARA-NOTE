@@ -27,6 +27,7 @@ Browser UI
   -> FastAPI backend (/api/simplify)
     -> guardrails and PHI checks
     -> DeepSeek V4 structured JSON generation
+    -> output safety review
     -> response normalization and safety fallback
 ```
 
@@ -38,6 +39,7 @@ CLARA Note uses three layers of safety controls:
 
 - Pre-checks for obvious PHI patterns and high-risk language
 - A non-diagnostic system prompt that forbids treatment recommendations
+- Output safety review that flags diagnostic wording, treatment advice, missing uncertainty, and missing non-diagnostic boundaries
 - Response normalization plus fallback rules when model output is incomplete or unavailable
 
 ## Project Structure
@@ -51,12 +53,14 @@ CLARA Note uses three layers of safety controls:
 │   ├── api.py
 │   ├── guardrails.py
 │   ├── llm.py
-│   └── rule_engine.py
+│   ├── rule_engine.py
+│   └── safety_review.py
 ├── evals/
+│   ├── run_evals.py
 │   └── sample_notes.json
 ├── tests/
-│   ├── test_guardrails.py
-│   └── test_rule_engine.py
+├── render.yaml
+├── netlify.toml
 ├── requirements.txt
 └── requirements-dev.txt
 ```
@@ -88,7 +92,7 @@ pip install -r requirements-dev.txt
 Start the API:
 
 ```bash
-uvicorn clara_agent.api:app --reload --port 8001
+uvicorn clara_agent.api:app --port 8001
 ```
 
 The frontend will automatically try:
@@ -141,7 +145,7 @@ CLARA_LLM_MODEL="gpt-4o-mini"
 Then restart the backend:
 
 ```bash
-uvicorn clara_agent.api:app --reload --port 8001
+uvicorn clara_agent.api:app --port 8001
 ```
 
 You can also export the variables directly in your shell instead of using `.env`.
@@ -164,6 +168,29 @@ export CLARA_CORS_ORIGINS="https://your-frontend.example.com,http://localhost:80
 ```
 
 For deployment, keep `CLARA_LLM_API_KEY` only on the backend host. Never expose it in frontend code.
+
+### Render Backend
+
+This repo includes `render.yaml` for a Render web service. Create a new Render Blueprint from the GitHub repo, then set these environment variables in Render:
+
+```bash
+CLARA_LLM_API_KEY=your_deepseek_key
+CLARA_CORS_ORIGINS=https://your-netlify-site.netlify.app
+```
+
+`CLARA_LLM_PROVIDER`, `CLARA_LLM_BASE_URL`, and `CLARA_LLM_MODEL` are already defined in `render.yaml`.
+
+### Netlify Frontend
+
+This repo includes `netlify.toml` for static frontend hosting. After the backend URL is available, set `window.CLARA_API_BASE_URL` in `index.html` to the deployed backend origin, for example:
+
+```html
+<script>
+  window.CLARA_API_BASE_URL = "https://clara-note-api.onrender.com";
+</script>
+```
+
+Then deploy the repository to Netlify with publish directory `.`.
 
 ## API
 
@@ -193,7 +220,9 @@ Response:
   "safety_flags": [{ "label": "Uncertain wording", "level": "warning" }],
   "agent_steps": ["Detect clinical concepts", "..."],
   "mode": "patient",
-  "source": "local_rules"
+  "source": "local_rules",
+  "review_flags": [],
+  "fallback_reason": ""
 }
 ```
 
@@ -218,6 +247,7 @@ Run lightweight safety evals:
 ```bash
 python evals/run_evals.py
 python evals/run_evals.py --backend-url http://localhost:8001/api/simplify
+python evals/run_evals.py --backend-url http://localhost:8001/api/simplify --use-llm
 ```
 
 Without installing dev dependencies, you can still run a basic syntax check:

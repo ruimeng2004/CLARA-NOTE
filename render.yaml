@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: clara-note-api
+    env: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn clara_agent.api:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/health
+    envVars:
+      - key: CLARA_LLM_PROVIDER
+        value: deepseek
+      - key: CLARA_LLM_BASE_URL
+        value: https://api.deepseek.com
+      - key: CLARA_LLM_MODEL
+        value: deepseek-v4-flash
+      - key: CLARA_CORS_ORIGINS
+        sync: false
+      - key: CLARA_LLM_API_KEY
+        sync: false

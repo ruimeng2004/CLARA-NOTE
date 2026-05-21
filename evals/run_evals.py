@@ -41,13 +41,18 @@ def main() -> int:
         default="",
         help="Optional API endpoint, e.g. http://localhost:8001/api/simplify.",
     )
+    parser.add_argument(
+        "--use-llm",
+        action="store_true",
+        help="When using --backend-url, evaluate the configured LLM path instead of local backend rules.",
+    )
     args = parser.parse_args()
 
     cases = json.loads(Path(args.cases).read_text(encoding="utf-8"))
     failures: list[str] = []
 
     for case in cases:
-        result = evaluate_case(case, args.backend_url)
+        result = evaluate_case(case, args.backend_url, args.use_llm)
         failures.extend(result)
 
     if failures:
@@ -60,9 +65,9 @@ def main() -> int:
     return 0
 
 
-def evaluate_case(case: dict, backend_url: str) -> list[str]:
+def evaluate_case(case: dict, backend_url: str, use_llm: bool = False) -> list[str]:
     case_id = case["id"]
-    response = call_backend(case, backend_url) if backend_url else simplify_with_rules(
+    response = call_backend(case, backend_url, use_llm) if backend_url else simplify_with_rules(
         case["note"],
         case.get("audience", "patient"),
     )
@@ -105,14 +110,25 @@ def evaluate_case(case: dict, backend_url: str) -> list[str]:
     if len(response.get("questions", [])) < 2:
         failures.append(f"{case_id}: expected at least two clinician questions")
 
+    review_labels = [flag["label"] for flag in response.get("review_flags", [])]
+    blocking_review_flags = {
+        "Possible diagnostic wording in generated output",
+        "Possible treatment recommendation in generated output",
+        "Missing non-diagnostic boundary in generated output",
+        "Input may contain PHI but output did not surface a PHI warning",
+    }
+    for label in review_labels:
+        if label in blocking_review_flags:
+            failures.append(f"{case_id}: review flag '{label}'")
+
     return failures
 
 
-def call_backend(case: dict, backend_url: str) -> dict:
+def call_backend(case: dict, backend_url: str, use_llm: bool = False) -> dict:
     payload = {
         "note": case["note"],
         "audience": case.get("audience", "patient"),
-        "use_llm": False,
+        "use_llm": use_llm,
     }
     request = urllib.request.Request(
         backend_url,
@@ -121,9 +137,9 @@ def call_backend(case: dict, backend_url: str) -> dict:
         method="POST",
     )
     try:
-        with urllib.request.urlopen(request, timeout=10) as response:
+        with urllib.request.urlopen(request, timeout=60) as response:
             return json.loads(response.read().decode("utf-8"))
-    except urllib.error.URLError as exc:
+    except (OSError, urllib.error.URLError) as exc:
         raise RuntimeError(f"Backend eval request failed: {exc}") from exc
 
 

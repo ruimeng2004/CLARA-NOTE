@@ -8,6 +8,7 @@ import urllib.error
 import urllib.request
 
 from .rule_engine import AGENT_STEPS, simplify_with_rules
+from .safety_review import review_response
 
 try:
     from dotenv import load_dotenv
@@ -92,12 +93,16 @@ RESPONSE_SCHEMA = {
 def simplify_note(note: str, audience: str = "patient", use_llm: bool = True) -> dict:
     fallback = simplify_with_rules(note, audience)
     if not use_llm or not get_api_key():
+        fallback["review_flags"] = review_response(note, fallback)
+        fallback["fallback_reason"] = "llm_disabled_or_missing_api_key"
         return fallback
 
     try:
         llm_response, source = call_llm(note, audience)
-    except (OSError, urllib.error.URLError, json.JSONDecodeError, KeyError, ValueError):
+    except (OSError, urllib.error.URLError, json.JSONDecodeError, KeyError, ValueError) as exc:
         fallback["source"] = "local_rules_after_llm_error"
+        fallback["review_flags"] = review_response(note, fallback)
+        fallback["fallback_reason"] = exc.__class__.__name__
         return fallback
 
     merged = fallback | llm_response
@@ -108,6 +113,9 @@ def simplify_note(note: str, audience: str = "patient", use_llm: bool = True) ->
     merged["agent_steps"] = llm_response.get("agent_steps") or AGENT_STEPS
     merged["mode"] = audience
     merged["source"] = source
+    enforce_safety_boundary(merged)
+    merged["review_flags"] = review_response(note, merged)
+    merged["fallback_reason"] = ""
     return merged
 
 
@@ -297,27 +305,56 @@ def extract_output_text(response: dict) -> str:
 
 
 def normalize_response(data: dict, audience: str) -> dict:
-    data.setdefault("plain_summary", "")
-    data.setdefault("terms", [])
-    data.setdefault("questions", [])
-    data.setdefault("uncertainties", [])
-    data.setdefault("safety_flags", [])
-    data.setdefault("agent_steps", AGENT_STEPS)
+    data["plain_summary"] = str(data.get("plain_summary") or "")
+    data["terms"] = [
+        term
+        for term in (normalize_term(term) for term in listify(data.get("terms")))
+        if term["term"] or term["explanation"]
+    ]
+    data["questions"] = [
+        str(item) for item in listify(data.get("questions")) if str(item).strip()
+    ]
+    data["uncertainties"] = [
+        str(item) for item in listify(data.get("uncertainties")) if str(item).strip()
+    ]
+    data["safety_flags"] = [
+        normalize_flag(flag) for flag in listify(data.get("safety_flags"))
+    ]
+    data["agent_steps"] = [
+        str(item) for item in listify(data.get("agent_steps")) if str(item).strip()
+    ] or AGENT_STEPS
     data["mode"] = data.get("mode") if data.get("mode") in {"patient", "student", "caregiver"} else audience
-    data.setdefault("source", "llm")
-
-    data["terms"] = [normalize_term(term) for term in data.get("terms", [])]
-    data["safety_flags"] = [normalize_flag(flag) for flag in data.get("safety_flags", [])]
+    data["source"] = str(data.get("source") or "llm")
     return data
+
+
+def listify(value: object) -> list:
+    if value is None:
+        return []
+    if isinstance(value, list):
+        return value
+    if isinstance(value, tuple):
+        return list(value)
+    return [value]
 
 
 def normalize_term(term: object) -> dict:
     if isinstance(term, dict):
-        return {
-            "term": str(term.get("term", "")),
-            "explanation": str(term.get("explanation", "")),
-        }
+        label = first_present(term, ("term", "name", "label", "medical_term", "word"))
+        explanation = first_present(
+            term,
+            ("explanation", "definition", "meaning", "description", "plain_language"),
+        )
+        return {"term": label, "explanation": explanation}
     return {"term": str(term), "explanation": ""}
+
+
+def first_present(data: dict, keys: tuple[str, ...]) -> str:
+    for key in keys:
+        value = data.get(key)
+        if value:
+            return str(value)
+    return ""
 
 
 def normalize_flag(flag: object) -> dict:
@@ -350,3 +387,19 @@ def merge_flags(first: list[dict], second: list[dict]) -> list[dict]:
         seen.add(key)
         merged.append({"label": key[0], "level": key[1]})
     return merged
+
+
+def enforce_safety_boundary(response: dict) -> None:
+    boundary = (
+        "This is not a diagnosis or medical advice; "
+        "review the note and next steps with a licensed clinician."
+    )
+    text = json.dumps(response).lower()
+    if "not a diagnosis" not in text and "not medical advice" not in text:
+        summary = response.get("plain_summary", "").strip()
+        response["plain_summary"] = f"{summary} {boundary}".strip()
+
+    response["safety_flags"] = merge_flags(
+        response.get("safety_flags", []),
+        [{"label": "Non-diagnostic explanation only", "level": "ok"}],
+    )

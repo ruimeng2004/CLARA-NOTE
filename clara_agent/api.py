@@ -34,6 +34,11 @@ class SafetyFlag(BaseModel):
     level: str
 
 
+class ReviewFlag(BaseModel):
+    label: str
+    level: str
+
+
 class SimplifyResponse(BaseModel):
     plain_summary: str
     terms: list[Term]
@@ -43,6 +48,8 @@ class SimplifyResponse(BaseModel):
     agent_steps: list[str]
     mode: Audience
     source: str
+    review_flags: list[ReviewFlag] = []
+    fallback_reason: str = ""
 
 def get_cors_origins() -> list[str]:
     configured = os.getenv("CLARA_CORS_ORIGINS")
