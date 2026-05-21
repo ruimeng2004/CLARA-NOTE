@@ -461,6 +461,19 @@ function localSimplify(note, audience) {
   };
 }
 
+function sourceLabel(source) {
+  const labels = {
+    openai_structured: "OpenAI structured output",
+    openai_responses_structured: "OpenAI Responses structured output",
+    deepseek_structured: "DeepSeek structured output",
+    gptsapi_structured: "GPTsAPI structured output",
+    local_rules: "Backend local rules fallback",
+    local_rules_after_llm_error: "Backend local rules fallback"
+  };
+
+  return labels[source] || `Backend source: ${source || "unknown"}`;
+}
+
 async function simplifyWithBackend(note, audience) {
   const response = await fetch("http://localhost:8001/api/simplify", {
     method: "POST",
@@ -499,12 +512,7 @@ async function simplifyNote() {
   try {
     const response = await simplifyWithBackend(note, audience);
     renderResponse(response);
-    setRuntimeStatus(
-      response.source === "openai_structured"
-        ? "OpenAI structured output"
-        : "Backend local rules fallback",
-      "ok"
-    );
+    setRuntimeStatus(sourceLabel(response.source), "ok");
   } catch {
     renderResponse(localSimplify(note, audience));
     setRuntimeStatus("Local rules fallback", "warn");
