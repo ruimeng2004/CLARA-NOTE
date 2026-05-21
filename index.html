@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CLARA Note</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="workspace" aria-label="CLARA Note clinical note simplifier">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">Clinical Language Agent for Readable Answers</p>
+            <h1>CLARA Note</h1>
+          </div>
+          <div class="status-pill" aria-label="Safety mode enabled">
+            <span class="status-dot"></span>
+            Non-diagnostic
+          </div>
+        </header>
+
+        <section class="input-panel">
+          <div class="panel-heading">
+            <h2>Simulated Clinical Note</h2>
+            <button id="sampleButton" class="icon-button" type="button" title="Load sample note" aria-label="Load sample note">
+              <span aria-hidden="true">↻</span>
+            </button>
+          </div>
+
+          <div class="sample-row" aria-label="Sample clinical note options">
+            <button class="sample-chip active" type="button" data-sample="cardiology">Cardiology</button>
+            <button class="sample-chip" type="button" data-sample="radiology">Radiology</button>
+            <button class="sample-chip" type="button" data-sample="discharge">Discharge</button>
+            <button class="sample-chip" type="button" data-sample="labs">Labs</button>
+          </div>
+
+          <textarea
+            id="noteInput"
+            spellcheck="true"
+            placeholder="Paste a simulated clinical note or medical terms here. Do not enter real patient information."
+          ></textarea>
+
+          <fieldset class="mode-control">
+            <legend>Explanation mode</legend>
+            <label>
+              <input type="radio" name="audience" value="patient" checked />
+              Patient
+            </label>
+            <label>
+              <input type="radio" name="audience" value="student" />
+              Student
+            </label>
+            <label>
+              <input type="radio" name="audience" value="caregiver" />
+              Caregiver
+            </label>
+          </fieldset>
+
+          <div class="actions">
+            <button id="simplifyButton" class="primary-button" type="button">Simplify Note</button>
+            <button id="copyButton" class="secondary-button" type="button">Copy Report</button>
+            <button id="clearButton" class="secondary-button" type="button">Clear</button>
+          </div>
+          <div id="runtimeStatus" class="runtime-status" data-state="idle">
+            <span class="runtime-dot" aria-hidden="true"></span>
+            Local rules ready
+          </div>
+        </section>
+
+        <section class="result-grid" aria-live="polite">
+          <article class="result-card pipeline-card">
+            <div class="card-label">Agent pipeline</div>
+            <ol id="pipelineOutput" class="pipeline-list">
+              <li>Detect clinical concepts</li>
+              <li>Translate medical language</li>
+              <li>Flag uncertainty and privacy risk</li>
+              <li>Generate clinician questions</li>
+              <li>Apply non-diagnostic safety boundary</li>
+            </ol>
+          </article>
+
+          <article class="result-card primary-result">
+            <div class="card-label">What this note says</div>
+            <div id="summaryOutput" class="result-body muted">
+              Enter a simulated note to generate a patient-friendly explanation.
+            </div>
+          </article>
+
+          <article class="result-card">
+            <div class="card-label">Terms translated</div>
+            <ul id="termsOutput" class="result-list muted">
+              <li>No terms analyzed yet.</li>
+            </ul>
+          </article>
+
+          <article class="result-card">
+            <div class="card-label">Questions to ask</div>
+            <ul id="questionsOutput" class="result-list muted">
+              <li>No questions generated yet.</li>
+            </ul>
+          </article>
+
+          <article class="result-card">
+            <div class="card-label">What is still unclear</div>
+            <ul id="uncertaintyOutput" class="result-list muted">
+              <li>No uncertainty flags yet.</li>
+            </ul>
+          </article>
+
+          <article class="result-card">
+            <div class="card-label">Safety checks</div>
+            <div id="safetyOutput" class="tag-stack muted">
+              No safety checks run yet.
+            </div>
+          </article>
+        </section>
+
+        <aside class="safety-band">
+          <strong>Safety boundary:</strong>
+          This demo explains simulated text in simpler language. It does not diagnose, recommend treatment, or replace a licensed clinician.
+        </aside>
+      </section>
+    </main>
+    <script src="script.js"></script>
+  </body>
+</html>

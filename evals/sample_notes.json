@@ -1,0 +1,26 @@
+[
+  {
+    "id": "cardiology_uncertain",
+    "audience": "patient",
+    "note": "Assessment: 54-year-old female with hypertension and type 2 diabetes presents with intermittent chest discomfort and shortness of breath. ECG shows nonspecific ST-T changes. Troponin is mildly elevated. CTA chest negative for pulmonary embolism. Plan: admit for telemetry, trend troponins, start aspirin, continue home metformin unless renal function worsens, cardiology consult.",
+    "expected_flags": ["Urgent language detected", "Medication mentioned", "Uncertain wording", "Follow-up needed"]
+  },
+  {
+    "id": "radiology_stone",
+    "audience": "student",
+    "note": "CT abdomen and pelvis with IV contrast: Mild right hydronephrosis with a 4 mm obstructing calculus at the ureterovesical junction. No free air or abscess. Impression: Right distal ureteral stone with mild upstream collecting system dilation. Recommend correlation with urinalysis and renal function.",
+    "expected_flags": ["Uncertain wording"]
+  },
+  {
+    "id": "discharge_pneumonia",
+    "audience": "caregiver",
+    "note": "Discharge summary: Patient admitted for community-acquired pneumonia and treated with ceftriaxone and azithromycin. Oxygen requirement improved and patient is stable on room air. Complete oral antibiotics for 3 more days. Follow up with primary care in 1 week. Return for worsening fever, chest pain, confusion, or shortness of breath.",
+    "expected_flags": ["Urgent language detected", "Medication mentioned", "Follow-up needed"]
+  },
+  {
+    "id": "fake_phi",
+    "audience": "patient",
+    "note": "Patient ID: MRN-12345. Smith, Anna was seen on 04/12/2026 for follow up. Please call 555-123-4567 with results.",
+    "expected_flags": ["Possible PHI detected. Remove private details before using AI tools.", "Possible patient name", "Possible phone number", "Possible medical record identifier", "Possible exact date"]
+  }
+]

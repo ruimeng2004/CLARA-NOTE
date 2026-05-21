@@ -1,0 +1,2 @@
+"""CLARA Note backend package."""
+
