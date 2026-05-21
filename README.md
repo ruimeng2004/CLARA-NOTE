@@ -87,6 +87,23 @@ export OPENAI_MODEL="gpt-4o-mini"
 
 The backend loads `.env` automatically when `python-dotenv` is installed. If no API key is configured, or if the API call fails, CLARA Note returns a deterministic local fallback.
 
+### DeepSeek V4 Setup
+
+DeepSeek V4 is available through an OpenAI-compatible Chat Completions API. Create a `.env` file:
+
+```bash
+CLARA_LLM_PROVIDER=deepseek
+CLARA_LLM_BASE_URL=https://api.deepseek.com
+CLARA_LLM_API_KEY="your_deepseek_key"
+CLARA_LLM_MODEL="deepseek-v4-flash"
+```
+
+For higher capability, use `deepseek-v4-pro` instead of `deepseek-v4-flash`. Then restart the backend:
+
+```bash
+uvicorn clara_agent.api:app --port 8001
+```
+
 ### GPTsAPI Setup
 
 GPTsAPI is OpenAI-compatible, so CLARA Note can call it through the Chat Completions endpoint. Create a `.env` file:
