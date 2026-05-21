@@ -1,0 +1,54 @@
+<svg width="1280" height="820" viewBox="0 0 1280 820" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1280" height="820" fill="#f4f7f8"/>
+  <circle cx="1095" cy="90" r="170" fill="#f4bb44" fill-opacity="0.18"/>
+  <path d="M0 0h610c-120 112-222 185-370 218C125 244 50 307 0 380V0Z" fill="#0f766e" fill-opacity="0.10"/>
+  <text x="72" y="82" fill="#115e59" font-family="Inter, Arial, sans-serif" font-size="18" font-weight="700">Clinical Language Agent for Readable Answers</text>
+  <text x="72" y="142" fill="#16211f" font-family="Inter, Arial, sans-serif" font-size="70" font-weight="800">CLARA Note</text>
+  <rect x="1045" y="64" width="160" height="42" rx="21" fill="#ffffff" stroke="#d7e1df"/>
+  <circle cx="1071" cy="85" r="6" fill="#14b8a6"/>
+  <text x="1088" y="91" fill="#115e59" font-family="Inter, Arial, sans-serif" font-size="16" font-weight="700">Non-diagnostic</text>
+
+  <rect x="72" y="190" width="430" height="530" rx="8" fill="#ffffff" stroke="#d7e1df"/>
+  <text x="96" y="230" fill="#16211f" font-family="Inter, Arial, sans-serif" font-size="19" font-weight="750">Simulated Clinical Note</text>
+  <rect x="96" y="254" width="86" height="36" rx="8" fill="#d9f4ee" stroke="#9fd8cf"/>
+  <text x="113" y="277" fill="#115e59" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="700">Cardiology</text>
+  <rect x="190" y="254" width="82" height="36" rx="8" fill="#ffffff" stroke="#d7e1df"/>
+  <text x="206" y="277" fill="#697875" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="700">Radiology</text>
+  <rect x="280" y="254" width="86" height="36" rx="8" fill="#ffffff" stroke="#d7e1df"/>
+  <text x="295" y="277" fill="#697875" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="700">Discharge</text>
+  <rect x="374" y="254" width="74" height="36" rx="8" fill="#ffffff" stroke="#d7e1df"/>
+  <text x="397" y="277" fill="#697875" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="700">Labs</text>
+  <rect x="96" y="310" width="382" height="270" rx="8" fill="#fbfdfd" stroke="#d7e1df"/>
+  <text x="116" y="345" fill="#697875" font-family="Inter, Arial, sans-serif" font-size="16">Assessment: 54-year-old female with</text>
+  <text x="116" y="377" fill="#697875" font-family="Inter, Arial, sans-serif" font-size="16">hypertension and type 2 diabetes...</text>
+  <text x="116" y="409" fill="#697875" font-family="Inter, Arial, sans-serif" font-size="16">Troponin is mildly elevated.</text>
+  <text x="116" y="441" fill="#697875" font-family="Inter, Arial, sans-serif" font-size="16">Plan: cardiology consult.</text>
+  <rect x="96" y="610" width="142" height="44" rx="8" fill="#0f766e"/>
+  <text x="120" y="638" fill="#ffffff" font-family="Inter, Arial, sans-serif" font-size="16" font-weight="800">Simplify Note</text>
+  <rect x="250" y="610" width="112" height="44" rx="8" fill="#ffffff" stroke="#d7e1df"/>
+  <text x="275" y="638" fill="#16211f" font-family="Inter, Arial, sans-serif" font-size="16" font-weight="750">Copy Report</text>
+  <circle cx="104" cy="685" r="5" fill="#14b8a6"/>
+  <text x="118" y="691" fill="#115e59" font-family="Inter, Arial, sans-serif" font-size="15" font-weight="700">DeepSeek structured output</text>
+
+  <rect x="528" y="190" width="680" height="94" rx="8" fill="#f9fcfb" stroke="#d7e1df"/>
+  <text x="552" y="225" fill="#115e59" font-family="Inter, Arial, sans-serif" font-size="15" font-weight="800">AGENT PIPELINE</text>
+  <text x="552" y="258" fill="#16211f" font-family="Inter, Arial, sans-serif" font-size="15" font-weight="700">Detect concepts  •  Translate language  •  Flag privacy risk  •  Generate questions  •  Apply safety boundary</text>
+
+  <rect x="528" y="306" width="680" height="150" rx="8" fill="#ffffff" stroke="#d7e1df"/>
+  <text x="552" y="342" fill="#115e59" font-family="Inter, Arial, sans-serif" font-size="15" font-weight="800">WHAT THIS NOTE SAYS</text>
+  <text x="552" y="382" fill="#16211f" font-family="Inter, Arial, sans-serif" font-size="20" font-weight="650">A blood test called troponin is slightly higher than normal.</text>
+  <text x="552" y="416" fill="#697875" font-family="Inter, Arial, sans-serif" font-size="17">CLARA preserves uncertainty and avoids diagnosis or treatment advice.</text>
+
+  <rect x="528" y="478" width="324" height="150" rx="8" fill="#ffffff" stroke="#d7e1df"/>
+  <text x="552" y="512" fill="#115e59" font-family="Inter, Arial, sans-serif" font-size="15" font-weight="800">TERMS TRANSLATED</text>
+  <text x="552" y="552" fill="#16211f" font-family="Inter, Arial, sans-serif" font-size="17">• Troponin</text>
+  <text x="552" y="584" fill="#16211f" font-family="Inter, Arial, sans-serif" font-size="17">• Cardiology consult</text>
+
+  <rect x="884" y="478" width="324" height="150" rx="8" fill="#ffffff" stroke="#d7e1df"/>
+  <text x="908" y="512" fill="#115e59" font-family="Inter, Arial, sans-serif" font-size="15" font-weight="800">QUESTIONS TO ASK</text>
+  <text x="908" y="552" fill="#16211f" font-family="Inter, Arial, sans-serif" font-size="17">• What could cause this?</text>
+  <text x="908" y="584" fill="#16211f" font-family="Inter, Arial, sans-serif" font-size="17">• What will be checked next?</text>
+
+  <rect x="528" y="650" width="680" height="70" rx="8" fill="#fff9eb" stroke="#d7e1df"/>
+  <text x="552" y="692" fill="#8a5a12" font-family="Inter, Arial, sans-serif" font-size="17" font-weight="700">Safety boundary: explanation only, not medical advice.</text>
+</svg>

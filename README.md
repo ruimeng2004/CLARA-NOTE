@@ -2,9 +2,11 @@
 
 **Clinical Language Agent for Readable Answers**
 
-CLARA Note is a safety-aware clinical language agent that turns simulated medical notes into plain-language explanations, flags uncertainty and possible privacy risks, and helps patients, caregivers, or medical AI students prepare better questions for clinicians.
+CLARA Note is a safety-aware clinical language agent powered by DeepSeek V4. It turns simulated medical notes into plain-language explanations, flags uncertainty and possible privacy risks, and helps patients, caregivers, or medical AI students prepare better questions for clinicians.
 
 It is designed as a responsible medical AI portfolio project. It does not diagnose, recommend treatment, or replace a licensed clinician.
+
+![CLARA Note interface preview](assets/clara-note-preview.svg)
 
 ## What It Does
 
@@ -15,7 +17,28 @@ It is designed as a responsible medical AI portfolio project. It does not diagno
 - Generates questions to ask a clinician
 - Supports patient, caregiver, and student explanation modes
 - Uses a local deterministic fallback when no backend or API key is available
-- Optionally calls the OpenAI Responses API or an OpenAI-compatible provider with structured JSON output
+- Calls DeepSeek V4 through an OpenAI-compatible API, with local deterministic fallback support
+
+
+## Architecture
+
+```text
+Browser UI
+  -> FastAPI backend (/api/simplify)
+    -> guardrails and PHI checks
+    -> DeepSeek V4 structured JSON generation
+    -> response normalization and safety fallback
+```
+
+The frontend never stores API keys. LLM credentials are read only by the backend from environment variables or a local `.env` file.
+
+## Safety Design
+
+CLARA Note uses three layers of safety controls:
+
+- Pre-checks for obvious PHI patterns and high-risk language
+- A non-diagnostic system prompt that forbids treatment recommendations
+- Response normalization plus fallback rules when model output is incomplete or unavailable
 
 ## Project Structure
 
