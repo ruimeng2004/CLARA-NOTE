@@ -238,6 +238,7 @@ def call_chat_completions(note: str, audience: str) -> dict:
 
     output_text = body["choices"][0]["message"]["content"]
     parsed = json.loads(output_text)
+    parsed = normalize_response(parsed, audience)
     validate_response_shape(parsed)
     return parsed
 
@@ -253,26 +254,14 @@ def call_deepseek_tool(note: str, audience: str) -> dict:
                 "content": (
                     f"Audience mode: {audience}\n\n"
                     "Simplify this simulated clinical note while preserving uncertainty. "
-                    "Call the return_clara_note function with the structured result:\n"
+                    "Return one valid JSON object only. The JSON must include: "
+                    "plain_summary, terms, questions, uncertainties, safety_flags, "
+                    "agent_steps, mode, source. Clinical note:\n"
                     f"{note}"
                 ),
             },
         ],
-        "tools": [
-            {
-                "type": "function",
-                "function": {
-                    "name": "return_clara_note",
-                    "description": "Return the CLARA Note structured response.",
-                    "parameters": RESPONSE_SCHEMA,
-                    "strict": True,
-                },
-            }
-        ],
-        "tool_choice": {
-            "type": "function",
-            "function": {"name": "return_clara_note"},
-        },
+        "response_format": {"type": "json_object"},
         "stream": False,
     }
     request = urllib.request.Request(
@@ -288,12 +277,9 @@ def call_deepseek_tool(note: str, audience: str) -> dict:
     with urllib.request.urlopen(request, timeout=30) as response:
         body = json.loads(response.read().decode("utf-8"))
 
-    message = body["choices"][0]["message"]
-    tool_calls = message.get("tool_calls") or []
-    if not tool_calls:
-        raise KeyError("No DeepSeek tool call found in response")
-
-    parsed = json.loads(tool_calls[0]["function"]["arguments"])
+    output_text = body["choices"][0]["message"]["content"]
+    parsed = json.loads(output_text)
+    parsed = normalize_response(parsed, audience)
     validate_response_shape(parsed)
     return parsed
 
@@ -310,6 +296,40 @@ def extract_output_text(response: dict) -> str:
     raise KeyError("No output text found in OpenAI response")
 
 
+def normalize_response(data: dict, audience: str) -> dict:
+    data.setdefault("plain_summary", "")
+    data.setdefault("terms", [])
+    data.setdefault("questions", [])
+    data.setdefault("uncertainties", [])
+    data.setdefault("safety_flags", [])
+    data.setdefault("agent_steps", AGENT_STEPS)
+    data["mode"] = data.get("mode") if data.get("mode") in {"patient", "student", "caregiver"} else audience
+    data.setdefault("source", "llm")
+
+    data["terms"] = [normalize_term(term) for term in data.get("terms", [])]
+    data["safety_flags"] = [normalize_flag(flag) for flag in data.get("safety_flags", [])]
+    return data
+
+
+def normalize_term(term: object) -> dict:
+    if isinstance(term, dict):
+        return {
+            "term": str(term.get("term", "")),
+            "explanation": str(term.get("explanation", "")),
+        }
+    return {"term": str(term), "explanation": ""}
+
+
+def normalize_flag(flag: object) -> dict:
+    if isinstance(flag, dict):
+        level = str(flag.get("level", "warning"))
+        return {
+            "label": str(flag.get("label", "")),
+            "level": level if level in {"ok", "warning"} else "warning",
+        }
+    return {"label": str(flag), "level": "warning"}
+
+
 def validate_response_shape(data: dict) -> None:
     required = set(RESPONSE_SCHEMA["required"])
     missing = required - set(data)
@@ -322,9 +342,10 @@ def validate_response_shape(data: dict) -> None:
 def merge_flags(first: list[dict], second: list[dict]) -> list[dict]:
     seen: set[tuple[str, str]] = set()
     merged: list[dict] = []
-    for flag in first + second:
+    for raw_flag in first + second:
+        flag = normalize_flag(raw_flag)
         key = (flag.get("label", ""), flag.get("level", "warning"))
-        if key in seen:
+        if key in seen or not key[0]:
             continue
         seen.add(key)
         merged.append({"label": key[0], "level": key[1]})
